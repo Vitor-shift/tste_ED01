@@ -1,3 +1,5 @@
+# É necessario mudar vcarias linhas ainda.. 
+
 from fastapi import FastAPI, Query, HTTPException
 from typing import List
 from kdtree_wrapper import lib, Tarv, TReg, EMBEDDING_DIM, ID_LEN # Import constants
