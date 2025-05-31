@@ -1,11 +1,14 @@
 import ctypes
-from ctypes import Structure, POINTER, c_double, c_int,c_char
+from ctypes import Structure, POINTER, c_float, c_int, c_char, c_double
+
+# Constants from C (important to keep in sync)
+EMBEDDING_DIM = 128
+ID_LEN = 100
 
 class TReg(Structure):
-    _fields_ = [("lat", c_double), 
-                ("lon", c_double),
-                ("nome",c_char *100)
-                ]
+    _fields_ = [("embedding", c_float * EMBEDDING_DIM),
+                ("id", c_char * ID_LEN)
+               ]
 
 class TNode(Structure):
     pass
@@ -15,19 +18,32 @@ TNode._fields_ = [("key", ctypes.c_void_p),
                   ("dir", POINTER(TNode))]
 
 class Tarv(Structure):
-    _fields_ = [("k", c_int),
-                ("dist", ctypes.CFUNCTYPE(c_double, ctypes.c_void_p, ctypes.c_void_p)),
-                ("cmp", ctypes.CFUNCTYPE(c_int, ctypes.c_void_p, ctypes.c_void_p, c_int)),
-                ("raiz", POINTER(TNode))]
+    _fields_ = [("raiz", POINTER(TNode)),
+                
+                ("cmp", ctypes.c_void_p),
+                ("dist", ctypes.c_void_p), 
+                ("k", c_int)
+               ]
 
 # Carregar a biblioteca C
-lib = ctypes.CDLL("./libkdtree.so")
 
-# Definir a assinatura da função
-lib.buscar_mais_proximo.argtypes = [POINTER(Tarv), TReg]
-lib.buscar_mais_proximo.restype = TReg
-lib.get_tree.restype = POINTER(Tarv)
-lib.inserir_ponto.argtypes = [TReg]
-lib.inserir_ponto.restype = None
+try:
+    lib = ctypes.CDLL("./libkdtree.so")
+except OSError as e:
+    print(f"Error loading libkdtree.so: {e}")
+    print("Make sure you have compiled kdtree.c (e.g., using: gcc -shared -o libkdtree.so -fPIC kdtree.c)")
+    exit(1)
+
+
+# Definir a assinatura das funções da API C
 lib.kdtree_construir.argtypes = []
 lib.kdtree_construir.restype = None
+
+lib.get_tree.argtypes = []
+lib.get_tree.restype = POINTER(Tarv)
+
+lib.inserir_ponto.argtypes = [TReg] 
+lib.inserir_ponto.restype = None
+
+lib.buscar_mais_proximo.argtypes = [POINTER(Tarv), TReg] 
+lib.buscar_mais_proximo.restype = TReg
